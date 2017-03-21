@@ -1,0 +1,10 @@
+type: object
+properties:
+  param1:
+    type: string
+    minLength: 1
+    default: default value
+  param2:
+    type: integer
+    minimum: 0
+    default: 100

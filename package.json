@@ -1,0 +1,26 @@
+{
+  "name": "apidoc-plugin-jsonschema",
+  "version": "0.0.1",
+  "description": "Schema Plugin for apidoc",
+  "main": "index.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=7.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/afoninsky/apidoc-plugin-jsonschema"
+  },
+  "devDependencies": {
+    "ava": "^0.18.2",
+    "eslint": "^3.17.1",
+    "eslint-plugin-output-todo-comments": "0.0.7"
+  },
+  "dependencies": {
+    "deasync": "^0.1.9",
+    "js-yaml": "^3.8.2",
+    "json-schema-faker": "^0.4.0",
+    "json-schema-ref-parser": "^3.1.2",
+    "lodash": "^4.17.4"
+  }
+}
