@@ -4,7 +4,5 @@
  * @apiGroup User
  * @apiDescription text
  *
- * @apiParam {NoGroupType} field=123 some description
- * @apiParam (GroupName) {GroupType} some second description
- * @apiParam {schema} test/fixtures/schemas/sample.json
+ * @apiParam (somegroup) {schema} test/fixtures/schemas/allof.json
  */

@@ -9,7 +9,19 @@ const TYPE_NAME = 'schema'
 // const shouldFakeElements = ['apiParamExample', 'apiSuccessExample']
 const shouldDescribeElements = ['apiParam', 'apiSuccess']
 
-const regExpStr = /{(.+)}(.+)/
+
+const loadSchemaReferences = sourceSchema => { // https://github.com/BigstickCarpet/json-schema-ref-parser/issues/14
+  let schema, error, success = false
+  jsonRefParser.dereference(sourceSchema, (err, data) => {
+    error = err
+    success = true
+    schema = data
+  })
+  deasync.loopWhile(() => { return !success })
+  if (error) { throw error }
+  return schema
+}
+
 
 /**
  * Load schema from various sources (.js, .json, .yaml, .yml)
@@ -19,16 +31,39 @@ const safeLoadSchema = schemaPath => {
   if (!fs.existsSync(realPath)) {
     throw new Error(`unable to load JSON schema - file not exists: ${realPath}`)
   }
+  let sourceSchema
   switch (path.extname(realPath)) {
     case '.yaml':
     case '.yml':
-      return yaml.safeLoad(fs.readFileSync(realPath, 'utf8'))
+      sourceSchema = yaml.safeLoad(fs.readFileSync(realPath, 'utf8'))
+      break
     case '.json':
     case '.js':
-      return require(realPath)
+      sourceSchema = require(realPath)
+      break
     default:
       throw new Error(`unable to load JSON schema - file type not supported: ${realPath}`)
   }
+
+  // load schemas from relative to current directory, fallback to schema directory
+  let schema
+  try {
+    schema = loadSchemaReferences(sourceSchema)
+  } catch (err) {
+    if (err.code !== 'ENOENT') { throw err }
+    const curDir = process.cwd()
+    const schemaDir = path.dirname(realPath)
+    process.chdir(schemaDir)
+    try {
+      schema = loadSchemaReferences(sourceSchema)
+    } finally  {
+      process.chdir(curDir)
+    }
+  }
+  if (schema.type !== 'object') {
+    throw new Error('expecting object on top of schema')
+  }
+  return schema
 }
 
 // http://apidocjs.com/#param-api-param
@@ -126,20 +161,13 @@ const iterateObjectReqursive = (accumulator, obj = {}, depth = 0, requiredItems 
 /**
  * Return apidoc-specific element based on json schema parameters
  */
-const extractArgumentsFromSchema = sourceSchema => {
-  // apidoc hook expect sync method: https://github.com/BigstickCarpet/json-schema-ref-parser/issues/14
-  let schema, error, success = false
-  jsonRefParser.dereference(sourceSchema, (err, data) => {
-    error = err
-    success = !err
-    schema = data
-  })
-  deasync.loopWhile(() => { return !success })
-  if (schema.type !== 'object' || !schema.properties) {
-    throw new Error('expecting object on top of schema')
-  }
+const extractArgumentsFromSchema = schema => {
   // 2do: title, description
   const items = []
+  if (schema.allOf) {
+    //
+    throw new Error('2DO: merge properties in recursive order')
+  }
   iterateObjectReqursive(items, schema.properties)
   return items
 }
@@ -156,15 +184,17 @@ const extractArgumentsFromSchema = sourceSchema => {
 const parserSchemaElements = (elements, element) => {
   const { sourceName, content } = element
   if (shouldDescribeElements.includes(sourceName)) {
-    const [, type, schemaPath ] = regExpStr.exec(content)
+    const elementParts = /{(.+)}(.+)/.exec(content)
+    const [, type, schemaPath ] = elementParts || []
     if (type !== TYPE_NAME) { return }
-    console.log(element)
+    const regParts = /\((.+)\).+{/.exec(content)
+    const groupName = regParts && regParts.length && regParts[1]
     elements.pop()
     const schema = safeLoadSchema(schemaPath)
     const additionalItems = extractArgumentsFromSchema(schema)
     additionalItems.forEach(content => {
       const clonedElement = Object.assign({}, element)
-      clonedElement.content = content
+      clonedElement.content = groupName ? `(${groupName}) ${content}` : content
       elements.push(clonedElement)
       console.log(clonedElement)
     })

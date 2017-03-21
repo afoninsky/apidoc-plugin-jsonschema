@@ -1,0 +1,7 @@
+{
+  "type": "object",
+  "allOf": [
+    { "$ref": "./part1.json"},
+    { "$ref": "part2.json"}
+  ]
+}

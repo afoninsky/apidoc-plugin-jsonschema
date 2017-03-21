@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "part2prop": {
+      "type": "string"
+    }
+  }
+}
