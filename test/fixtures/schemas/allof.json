@@ -1,4 +1,5 @@
 {
+  "description": "some data",
   "type": "object",
   "allOf": [
     { "$ref": "./part1.json"},
