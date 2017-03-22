@@ -1,4 +1,5 @@
 const jsonRefParser = require('json-schema-ref-parser')
+const jsf = require('json-schema-faker')
 const deasync = require('deasync')
 const fs = require('fs')
 const path = require('path')
@@ -184,6 +185,19 @@ module.exports = {
       }
     }
     return schema
+  },
+
+/**
+ * Generate data sample using 'faker' module
+ */
+  generateDataSample(schema) {
+    // little hack to avoid empty massive of data in case on not required fields using json faker module
+    let tries = 5, result
+    while(--tries) {
+      result = jsf(schema)
+      if (!ld.isEmpty(result)) { break }
+    }
+    return result
   }
 
 }

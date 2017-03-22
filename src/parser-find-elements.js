@@ -1,6 +1,4 @@
-const jsf = require('json-schema-faker')
-
-const { cloneElement, safeLoadSchema, extractArgumentsFromSchema } = require('./utils')
+const { cloneElement, safeLoadSchema, extractArgumentsFromSchema, generateDataSample } = require('./utils')
 
 const TYPE_NAME = 'schema'
 const shouldFakeElements = ['apiParamExample', 'apiSuccessExample', 'apiErrorExample', 'apiHeaderExample']
@@ -52,7 +50,7 @@ module.exports = (elements, element) => {
     const additionalData = additionalParts && additionalParts.length && additionalParts[1] || ''
 
     const schema = safeLoadSchema(schemaPath)
-    const sample = JSON.stringify(jsf(schema), null, ' ')
+    const sample = JSON.stringify(generateDataSample(schema), null, ' ')
     const title = schema.title || schema.description || `${name}:`
     elements.push(cloneElement(element, `{json} ${title}\n${additionalData}\n${sample}`))
     return
