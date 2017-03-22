@@ -51,15 +51,22 @@ function iterateObjectReqursive(accumulator, obj = {}, depth = 0, requiredItems 
         iterateObjectReqursive(accumulator, item.properties, depth + 1, item.required)
         break
       case 'string': // https://spacetelescope.github.io/understanding-json-schema/reference/string.html
+        let description = item.title || item.description || ''
+        if (item.format) {
+          description += `\n\nFormat: \`${item.format}\``
+        }
+        if (item.pattern) {
+          description += `\n\nPattern: \`${item.pattern}\``
+        }
         accumulator.push(createDocParameter(
           paddedName,
-          item.format || item.pattern ? `${item.type} / ${item.format || item.pattern.toString()}` : item.type,
+          item.type,
           item.minLength,
           item.maxLength,
           item.enum,
           requiredItems.includes(name),
           item.default,
-          item.title || item.description
+          description
         ))
         break
       case 'number': // https://spacetelescope.github.io/understanding-json-schema/reference/numeric.html
@@ -91,7 +98,7 @@ function iterateObjectReqursive(accumulator, obj = {}, depth = 0, requiredItems 
         break
       case 'array': // https://spacetelescope.github.io/understanding-json-schema/reference/array.html
         if (!item.items) {
-          return accumulator.push(createDocParameter(
+          accumulator.push(createDocParameter(
             paddedName,
             item.type,
             item.minItems,
@@ -101,10 +108,13 @@ function iterateObjectReqursive(accumulator, obj = {}, depth = 0, requiredItems 
             item.default,
             item.title || item.description
           ))
+        } else if (Array.isArray(item.items)) {
+          item.items.forEach(value => {
+            iterateObjectReqursive(accumulator, value, depth + 1)
+          })
+        } else {
+          iterateObjectReqursive(accumulator, item.items, depth + 1)
         }
-        item.items.forEach(value => {
-          iterateObjectReqursive(accumulator, value, depth + 1)
-        })
         break
     }
   }
@@ -132,7 +142,7 @@ module.exports = {
       ld.merge(schema, ...propertiesToMerge)
       delete schema.allOf
     }
-    iterateObjectReqursive(items, schema.properties)
+    iterateObjectReqursive(items, schema.properties, 0, schema.required)
     return items
   },
 
@@ -172,9 +182,6 @@ module.exports = {
       } finally  {
         process.chdir(curDir)
       }
-    }
-    if (schema.type !== 'object') {
-      throw new Error('expecting object on top of schema')
     }
     return schema
   }
