@@ -1,6 +1,6 @@
 {
   "name": "apidoc-plugin-jsonschema",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Schema Plugin for apidoc",
   "main": "index.js",
   "license": "MIT",
